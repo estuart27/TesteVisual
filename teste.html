@@ -1,0 +1,849 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MotoSticker — Visualize seu Adesivo</title>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:wght@300;400;500;600;700&family=Barlow+Condensed:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --laranja: #FF4500;
+            --laranja-claro: #FF6B35;
+            --preto: #0A0A0A;
+            --cinza-escuro: #111111;
+            --cinza: #1E1E1E;
+            --cinza-medio: #2A2A2A;
+            --branco: #F5F5F0;
+            --branco-suave: rgba(245,245,240,0.85);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Barlow', sans-serif;
+            background: var(--preto);
+            color: var(--branco);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* ── FUNDO CINEMATOGRÁFICO ── */
+        .bg-wrapper {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+        }
+        .bg-img {
+            width: 100%; height: 100%;
+            object-fit: cover;
+            filter: brightness(0.22) saturate(0.6);
+        }
+        .bg-overlay {
+            position: absolute;
+            inset: 0;
+            background:
+                linear-gradient(180deg, rgba(10,10,10,0.7) 0%, transparent 40%, rgba(10,10,10,0.85) 100%),
+                linear-gradient(90deg, rgba(10,10,10,0.6) 0%, transparent 60%);
+        }
+        .bg-grain {
+            position: absolute;
+            inset: 0;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+            opacity: 0.4;
+            pointer-events: none;
+        }
+
+        /* ── CONTEÚDO PRINCIPAL ── */
+        .page {
+            position: relative;
+            z-index: 1;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* ── HEADER ── */
+        header {
+            padding: 28px 48px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid rgba(255,69,0,0.15);
+        }
+        .logo {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 2rem;
+            letter-spacing: 3px;
+            color: var(--branco);
+        }
+        .logo span { color: var(--laranja); }
+        .badge {
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 0.75rem;
+            font-weight: 600;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: var(--laranja);
+            border: 1px solid rgba(255,69,0,0.4);
+            padding: 6px 14px;
+            border-radius: 2px;
+        }
+
+        /* ── HERO ── */
+        .hero {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 80px 24px;
+            text-align: center;
+        }
+        .hero-eyebrow {
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 0.8rem;
+            font-weight: 600;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            color: var(--laranja);
+            margin-bottom: 20px;
+            opacity: 0;
+            animation: fadeUp 0.6s ease forwards 0.2s;
+        }
+        .hero h1 {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: clamp(3.5rem, 9vw, 7rem);
+            line-height: 0.92;
+            letter-spacing: 2px;
+            margin-bottom: 24px;
+            opacity: 0;
+            animation: fadeUp 0.6s ease forwards 0.4s;
+        }
+        .hero h1 em {
+            font-style: normal;
+            color: var(--laranja);
+            -webkit-text-stroke: 1px var(--laranja);
+        }
+        .hero p {
+            font-size: 1.1rem;
+            font-weight: 300;
+            color: rgba(245,245,240,0.6);
+            max-width: 480px;
+            line-height: 1.7;
+            margin-bottom: 48px;
+            opacity: 0;
+            animation: fadeUp 0.6s ease forwards 0.6s;
+        }
+        .btn-cta {
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 1.1rem;
+            font-weight: 700;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            color: var(--preto);
+            background: var(--laranja);
+            border: none;
+            padding: 18px 52px;
+            cursor: pointer;
+            clip-path: polygon(8px 0%, 100% 0%, calc(100% - 8px) 100%, 0% 100%);
+            transition: all 0.2s ease;
+            opacity: 0;
+            animation: fadeUp 0.6s ease forwards 0.8s;
+        }
+        .btn-cta:hover {
+            background: var(--laranja-claro);
+            transform: translateY(-2px);
+            box-shadow: 0 12px 40px rgba(255,69,0,0.35);
+        }
+
+        /* ── SIMULADOR (oculto inicialmente) ── */
+        #simulador {
+            display: none;
+            position: relative;
+            z-index: 1;
+            min-height: 100vh;
+        }
+
+        .sim-header {
+            padding: 28px 48px;
+            display: flex;
+            align-items: center;
+            gap: 24px;
+            border-bottom: 1px solid rgba(255,69,0,0.15);
+        }
+        .btn-voltar {
+            background: none;
+            border: 1px solid rgba(255,255,255,0.15);
+            color: var(--branco);
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 0.85rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            padding: 8px 18px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-voltar:hover { border-color: var(--laranja); color: var(--laranja); }
+        .sim-header .logo { font-size: 1.5rem; }
+
+        /* ── LAYOUT DO SIMULADOR ── */
+        .sim-body {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0;
+            min-height: calc(100vh - 90px);
+        }
+
+        /* coluna esquerda — adesivo */
+        .col-adesivo {
+            border-right: 1px solid rgba(255,255,255,0.06);
+            padding: 48px;
+            display: flex;
+            flex-direction: column;
+        }
+        .col-titulo {
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 0.75rem;
+            font-weight: 600;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            color: var(--laranja);
+            margin-bottom: 28px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .col-titulo::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: rgba(255,69,0,0.2);
+        }
+
+        /* preview do adesivo escolhido */
+        .adesivo-preview {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 4px;
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 28px;
+            overflow: hidden;
+            position: relative;
+        }
+        .adesivo-preview img {
+            max-width: 70%;
+            max-height: 70%;
+            object-fit: contain;
+            filter: drop-shadow(0 0 20px rgba(255,69,0,0.3));
+        }
+        .adesivo-preview .placeholder-txt {
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 0.85rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: rgba(255,255,255,0.2);
+            text-align: center;
+        }
+
+        /* grid de adesivos */
+        .adesivos-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 32px;
+        }
+        .adesivo-card {
+            background: rgba(255,255,255,0.03);
+            border: 2px solid rgba(255,255,255,0.06);
+            border-radius: 4px;
+            padding: 16px 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+            position: relative;
+        }
+        .adesivo-card:hover {
+            border-color: rgba(255,69,0,0.4);
+            background: rgba(255,69,0,0.05);
+        }
+        .adesivo-card.ativo {
+            border-color: var(--laranja);
+            background: rgba(255,69,0,0.08);
+        }
+        .adesivo-card.ativo::after {
+            content: '✓';
+            position: absolute;
+            top: 8px; right: 10px;
+            font-size: 0.7rem;
+            color: var(--laranja);
+            font-weight: 700;
+        }
+        .adesivo-card .card-emoji { font-size: 1.6rem; margin-bottom: 6px; }
+        .adesivo-card .card-nome {
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 0.8rem;
+            font-weight: 600;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            color: rgba(255,255,255,0.7);
+        }
+        input[type="radio"].hidden-radio { display: none; }
+
+        /* coluna direita — moto */
+        .col-moto {
+            padding: 48px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* upload zone */
+        .upload-zone {
+            background: rgba(255,255,255,0.02);
+            border: 2px dashed rgba(255,255,255,0.1);
+            border-radius: 4px;
+            aspect-ratio: 4/3;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.25s;
+            margin-bottom: 28px;
+            overflow: hidden;
+            position: relative;
+        }
+        .upload-zone:hover {
+            border-color: rgba(255,69,0,0.4);
+            background: rgba(255,69,0,0.04);
+        }
+        .upload-zone.tem-foto { border-style: solid; border-color: rgba(255,69,0,0.3); }
+        .upload-zone img.preview-moto {
+            position: absolute;
+            inset: 0;
+            width: 100%; height: 100%;
+            object-fit: cover;
+        }
+        .upload-icon { font-size: 2.5rem; margin-bottom: 12px; opacity: 0.4; }
+        .upload-txt {
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 600;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: rgba(255,255,255,0.35);
+            text-align: center;
+        }
+        .upload-subtxt {
+            font-size: 0.75rem;
+            color: rgba(255,255,255,0.2);
+            margin-top: 6px;
+            text-align: center;
+        }
+        input#fotoMoto { display: none; }
+
+        /* campo de localização */
+        .local-section { margin-bottom: 32px; }
+        .local-label {
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 0.75rem;
+            font-weight: 600;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            color: rgba(255,255,255,0.4);
+            margin-bottom: 12px;
+            display: block;
+        }
+        .local-opcoes {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 14px;
+        }
+        .local-btn {
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 0.8rem;
+            font-weight: 600;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: rgba(255,255,255,0.5);
+            padding: 8px 16px;
+            cursor: pointer;
+            border-radius: 2px;
+            transition: all 0.15s;
+        }
+        .local-btn:hover { border-color: rgba(255,69,0,0.5); color: var(--laranja); }
+        .local-btn.ativo { border-color: var(--laranja); color: var(--laranja); background: rgba(255,69,0,0.08); }
+        .local-input {
+            width: 100%;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.08);
+            color: var(--branco);
+            font-family: 'Barlow', sans-serif;
+            font-size: 0.9rem;
+            padding: 12px 16px;
+            border-radius: 2px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .local-input:focus { border-color: rgba(255,69,0,0.5); }
+        .local-input::placeholder { color: rgba(255,255,255,0.2); }
+
+        /* botão gerar */
+        .btn-gerar {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.4rem;
+            letter-spacing: 4px;
+            color: var(--preto);
+            background: var(--laranja);
+            border: none;
+            padding: 20px;
+            width: 100%;
+            cursor: pointer;
+            clip-path: polygon(12px 0%, 100% 0%, calc(100% - 12px) 100%, 0% 100%);
+            transition: all 0.2s;
+            margin-top: auto;
+        }
+        .btn-gerar:hover:not(:disabled) {
+            background: var(--laranja-claro);
+            transform: translateY(-2px);
+            box-shadow: 0 12px 40px rgba(255,69,0,0.4);
+        }
+        .btn-gerar:disabled { background: #333; color: #666; cursor: not-allowed; }
+
+        /* loader */
+        .loader-bar {
+            display: none;
+            margin-top: 16px;
+            text-align: center;
+        }
+        .loader-bar .dots {
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 0.8rem;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            color: var(--laranja);
+        }
+        .progress {
+            width: 100%;
+            height: 2px;
+            background: rgba(255,255,255,0.06);
+            margin-top: 10px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            background: var(--laranja);
+            width: 0%;
+            animation: progressAnim 8s ease forwards;
+        }
+        @keyframes progressAnim { to { width: 90%; } }
+
+        /* ── MODAL RESULTADO ── */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 100;
+            background: rgba(0,0,0,0.92);
+            backdrop-filter: blur(8px);
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+        }
+        .modal-overlay.visivel { display: flex; animation: fadeIn 0.3s ease; }
+        .modal {
+            background: var(--cinza-escuro);
+            border: 1px solid rgba(255,69,0,0.2);
+            border-radius: 6px;
+            max-width: 900px;
+            width: 100%;
+            max-height: 90vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            animation: scaleIn 0.3s ease;
+        }
+        .modal-top {
+            padding: 20px 28px;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .modal-titulo {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.5rem;
+            letter-spacing: 3px;
+            color: var(--branco);
+        }
+        .modal-titulo span { color: var(--laranja); }
+        .modal-fechar {
+            background: none;
+            border: 1px solid rgba(255,255,255,0.1);
+            color: rgba(255,255,255,0.5);
+            font-size: 1.2rem;
+            width: 36px; height: 36px;
+            cursor: pointer;
+            border-radius: 2px;
+            transition: all 0.2s;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .modal-fechar:hover { border-color: var(--laranja); color: var(--laranja); }
+
+        /* viewer com zoom */
+        .modal-viewer {
+            flex: 1;
+            overflow: hidden;
+            position: relative;
+            cursor: zoom-in;
+            background: #0d0d0d;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 400px;
+        }
+        .modal-viewer.zoomed { cursor: zoom-out; }
+        .modal-img {
+            max-width: 100%;
+            max-height: 60vh;
+            object-fit: contain;
+            transition: transform 0.3s ease;
+            user-select: none;
+        }
+        .modal-img.zoomed { transform: scale(2); cursor: grab; }
+        .modal-img.zoomed:active { cursor: grabbing; }
+
+        .zoom-hint {
+            position: absolute;
+            bottom: 14px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 0.7rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: rgba(255,255,255,0.25);
+            pointer-events: none;
+        }
+
+        .modal-bottom {
+            padding: 20px 28px;
+            border-top: 1px solid rgba(255,255,255,0.06);
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+        .btn-whatsapp {
+            flex: 1;
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.1rem;
+            letter-spacing: 3px;
+            color: white;
+            background: #25D366;
+            border: none;
+            padding: 16px;
+            cursor: pointer;
+            clip-path: polygon(8px 0%, 100% 0%, calc(100% - 8px) 100%, 0% 100%);
+            transition: all 0.2s;
+        }
+        .btn-whatsapp:hover { background: #1ebe57; transform: translateY(-1px); }
+        .btn-refazer {
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 0.85rem;
+            font-weight: 600;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            background: none;
+            border: 1px solid rgba(255,255,255,0.15);
+            color: rgba(255,255,255,0.5);
+            padding: 16px 24px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-refazer:hover { border-color: var(--laranja); color: var(--laranja); }
+
+        /* ── ANIMAÇÕES ── */
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(24px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes scaleIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        /* ── RESPONSIVO ── */
+        @media (max-width: 768px) {
+            header, .sim-header { padding: 20px 24px; }
+            .sim-body { grid-template-columns: 1fr; }
+            .col-adesivo { border-right: none; border-bottom: 1px solid rgba(255,255,255,0.06); padding: 32px 24px; }
+            .col-moto { padding: 32px 24px; }
+            .hero h1 { font-size: 3.2rem; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- FUNDO CINEMÁTICO -->
+<div class="bg-wrapper">
+    <!-- Troque o src pela sua foto de fundo preferida -->
+    <img class="bg-img" src="https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=1920&q=80" alt="background">
+    <div class="bg-overlay"></div>
+    <div class="bg-grain"></div>
+</div>
+
+<!-- ═══════════════════════════════════ LANDING ═══════════════════════════════════ -->
+<div class="page" id="landing">
+    <header>
+        <div class="logo">Moto<span>Sticker</span></div>
+        <div class="badge">Simulador IA</div>
+    </header>
+
+    <div class="hero">
+        <div class="hero-eyebrow">✦ Tecnologia de visualização ✦</div>
+        <h1>Veja o adesivo<br>na sua <em>moto</em></h1>
+        <p>Escolha o adesivo, envie a foto da sua moto e nossa IA mostra exatamente como vai ficar — antes de comprar.</p>
+        <button class="btn-cta" onclick="abrirSimulador()">
+            Experimentar Agora →
+        </button>
+    </div>
+</div>
+
+<!-- ═══════════════════════════════════ SIMULADOR ════════════════════════════════ -->
+<div id="simulador">
+    <div class="sim-header">
+        <button class="btn-voltar" onclick="voltarLanding()">← Voltar</button>
+        <div class="logo">Moto<span style="color:var(--laranja)">Sticker</span></div>
+    </div>
+
+    <div class="sim-body">
+
+        <!-- COLUNA ESQUERDA: Escolha o Adesivo -->
+        <div class="col-adesivo">
+            <div class="col-titulo">01 — Escolha o Adesivo</div>
+
+            <!-- Preview do adesivo selecionado -->
+            <div class="adesivo-preview" id="adesivoPreview">
+                <div class="placeholder-txt">Selecione<br>um adesivo</div>
+            </div>
+
+            <!-- Cards de seleção -->
+            <div class="adesivos-grid">
+                <div class="adesivo-card" onclick="selecionarAdesivo('caveira_fogo', this)" id="card_caveira_fogo">
+                    <input type="radio" class="hidden-radio" name="adesivo" value="caveira_fogo">
+                    <div class="card-emoji">🔥</div>
+                    <div class="card-nome">Caveira de Fogo</div>
+                </div>
+                <div class="adesivo-card" onclick="selecionarAdesivo('raio_azul', this)" id="card_raio_azul">
+                    <input type="radio" class="hidden-radio" name="adesivo" value="raio_azul">
+                    <div class="card-emoji">⚡</div>
+                    <div class="card-nome">Raio Azul</div>
+                </div>
+                <!-- Adicione mais cards aqui seguindo o mesmo padrão -->
+            </div>
+        </div>
+
+        <!-- COLUNA DIREITA: Foto da Moto -->
+        <div class="col-moto">
+            <div class="col-titulo">02 — Foto da Sua Moto</div>
+
+            <!-- Upload zone -->
+            <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fotoMoto').click()">
+                <div class="upload-icon">📷</div>
+                <div class="upload-txt">Clique para enviar a foto</div>
+                <div class="upload-subtxt">Prefira foto do ângulo onde deseja colar o adesivo</div>
+            </div>
+            <input type="file" id="fotoMoto" accept="image/*" onchange="previaMoto(event)">
+
+            <!-- Onde colar -->
+            <div class="local-section">
+                <span class="local-label">03 — Onde deseja colar?</span>
+                <div class="local-opcoes">
+                    <button type="button" class="local-btn" onclick="selecionarLocal('Tanque de combustível', this)">Tanque</button>
+                    <button type="button" class="local-btn" onclick="selecionarLocal('Carenagem lateral', this)">Carenagem</button>
+                    <button type="button" class="local-btn" onclick="selecionarLocal('Paralama dianteiro', this)">Paralama</button>
+                    <button type="button" class="local-btn" onclick="selecionarLocal('Rabeta traseira', this)">Rabeta</button>
+                    <button type="button" class="local-btn" onclick="selecionarLocal('Carenagem do motor', this)">Motor</button>
+                </div>
+                <input type="text" class="local-input" id="localCustom"
+                    placeholder="Ou descreva onde quer colar (ex: lado direito do tanque)..."
+                    oninput="localCustomizado(this.value)">
+            </div>
+
+            <!-- Botão gerar -->
+            <button class="btn-gerar" id="gerarBtn" onclick="gerarSimulacao()">
+                Gerar Simulação ✦
+            </button>
+
+            <div class="loader-bar" id="loader">
+                <div class="dots">IA processando sua moto</div>
+                <div class="progress"><div class="progress-fill" id="progressFill"></div></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ═══════════════════════════════════ MODAL RESULTADO ══════════════════════════ -->
+<div class="modal-overlay" id="modalOverlay">
+    <div class="modal">
+        <div class="modal-top">
+            <div class="modal-titulo">Resultado <span>Final</span></div>
+            <button class="modal-fechar" onclick="fecharModal()">✕</button>
+        </div>
+        <div class="modal-viewer" id="modalViewer" onclick="toggleZoom()">
+            <img class="modal-img" id="modalImg" src="" alt="Resultado">
+            <div class="zoom-hint">Clique para zoom</div>
+        </div>
+        <div class="modal-bottom">
+            <button class="btn-whatsapp" id="btnWhatsapp">
+                💬 Quero Comprar no WhatsApp
+            </button>
+            <button class="btn-refazer" onclick="fecharModal()">
+                Refazer
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // ── Estado ──
+    let adesivoSelecionado = null;
+    let nomeAdesivoSelecionado = '';
+    let localColagem = '';
+    let imgZoomed = false;
+
+    // Mapa de imagens dos adesivos (ajuste os caminhos)
+    const ADESIVOS_IMG = {
+        'caveira_fogo': 'adesivos/caveira_fogo.png',
+        'raio_azul':    'adesivos/raio_azul.png',
+    };
+
+    // ── Navegação ──
+    function abrirSimulador() {
+        document.getElementById('landing').style.display = 'none';
+        document.getElementById('simulador').style.display = 'block';
+        window.scrollTo(0, 0);
+    }
+    function voltarLanding() {
+        document.getElementById('simulador').style.display = 'none';
+        document.getElementById('landing').style.display = 'flex';
+    }
+
+    // ── Selecionar adesivo ──
+    function selecionarAdesivo(id, el) {
+        document.querySelectorAll('.adesivo-card').forEach(c => c.classList.remove('ativo'));
+        el.classList.add('ativo');
+        el.querySelector('input[type=radio]').checked = true;
+        adesivoSelecionado = id;
+        nomeAdesivoSelecionado = el.querySelector('.card-nome').innerText;
+
+        // Mostra preview
+        const preview = document.getElementById('adesivoPreview');
+        preview.innerHTML = `<img src="${ADESIVOS_IMG[id]}" alt="${nomeAdesivoSelecionado}" onerror="this.parentElement.innerHTML='<div class=\\'placeholder-txt\\'>${nomeAdesivoSelecionado}</div>'">`;
+    }
+
+    // ── Preview da moto ──
+    function previaMoto(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        const url = URL.createObjectURL(file);
+        const zone = document.getElementById('uploadZone');
+        zone.classList.add('tem-foto');
+        zone.innerHTML = `<img class="preview-moto" src="${url}" alt="Moto">`;
+    }
+
+    // ── Selecionar local ──
+    function selecionarLocal(texto, el) {
+        document.querySelectorAll('.local-btn').forEach(b => b.classList.remove('ativo'));
+        el.classList.add('ativo');
+        localColagem = texto;
+        document.getElementById('localCustom').value = '';
+    }
+    function localCustomizado(val) {
+        document.querySelectorAll('.local-btn').forEach(b => b.classList.remove('ativo'));
+        localColagem = val;
+    }
+
+    // ── Gerar simulação ──
+    async function gerarSimulacao() {
+        const fotoInput = document.getElementById('fotoMoto').files[0];
+        if (!adesivoSelecionado) return alert('Selecione um adesivo.');
+        if (!fotoInput)          return alert('Envie a foto da sua moto.');
+        if (!localColagem)       return alert('Informe onde deseja colar o adesivo.');
+
+        const btn = document.getElementById('gerarBtn');
+        const loader = document.getElementById('loader');
+        btn.disabled = true;
+        loader.style.display = 'block';
+        // reinicia barra de progresso
+        const fill = document.getElementById('progressFill');
+        fill.style.animation = 'none';
+        fill.offsetHeight; // reflow
+        fill.style.animation = 'progressAnim 8s ease forwards';
+
+        const formData = new FormData();
+        formData.append('foto_moto', fotoInput);
+        formData.append('id_adesivo', adesivoSelecionado);
+        formData.append('local_adesivo', localColagem);
+
+        try {
+            const resp = await fetch('http://localhost:8000/gerar-simulacao', {
+                method: 'POST',
+                body: formData
+            });
+            const dados = await resp.json();
+
+            if (dados.sucesso) {
+                abrirModal(dados.imagem_final);
+            } else {
+                alert('Erro ao gerar imagem: ' + dados.erro);
+            }
+        } catch (err) {
+            alert('Erro de comunicação com o servidor.');
+            console.error(err);
+        } finally {
+            btn.disabled = false;
+            loader.style.display = 'none';
+        }
+    }
+
+    // ── Modal ──
+    function abrirModal(base64) {
+        const img = document.getElementById('modalImg');
+        img.src = `data:image/png;base64,${base64}`;
+        img.classList.remove('zoomed');
+        imgZoomed = false;
+        document.getElementById('modalViewer').classList.remove('zoomed');
+
+        // Botão WhatsApp
+        document.getElementById('btnWhatsapp').onclick = () => {
+            const msg = `Olá! Fiz a simulação no site e adorei! Quero comprar o adesivo: ${nomeAdesivoSelecionado}.`;
+            window.open(`https://wa.me/55NUMERO_AQUI?text=${encodeURIComponent(msg)}`, '_blank');
+        };
+
+        document.getElementById('modalOverlay').classList.add('visivel');
+    }
+    function fecharModal() {
+        document.getElementById('modalOverlay').classList.remove('visivel');
+    }
+    function toggleZoom() {
+        const img = document.getElementById('modalImg');
+        const viewer = document.getElementById('modalViewer');
+        imgZoomed = !imgZoomed;
+        img.classList.toggle('zoomed', imgZoomed);
+        viewer.classList.toggle('zoomed', imgZoomed);
+    }
+
+    // fecha modal clicando fora
+    document.getElementById('modalOverlay').addEventListener('click', function(e) {
+        if (e.target === this) fecharModal();
+    });
+</script>
+</body>
+</html>

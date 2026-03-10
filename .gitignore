@@ -1,0 +1,37 @@
+# Ambiente virtual
+venv/
+.env/
+.venv/
+
+# Variáveis de ambiente
+.env
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.sqlite3
+
+# Logs
+*.log
+
+# Sistema
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Jupyter
+.ipynb_checkpoints
+
+# Build
+build/
+dist/
+*.egg-info/
+
+# Arquivos temporários
+*.tmp
+*.bak

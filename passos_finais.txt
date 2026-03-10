@@ -1,0 +1,7 @@
+1 - Observação mais clara na hora de fixa a foto - para deixa claro do angulo da moto ( ideia é evitar erros)
+
+1.1 - pesquisa melhor sobre nano banana, isso vai ajudar a intender melhor os angulos que ele mais acerta ou que evitar mais erros
+
+2 - Pensar um caminho aonde quando o cliente clicar no site para entrar em nossa pagina, ja fixa o adesivo dele (FORA DO MVP)
+
+3 - Mudar os nomes ( extenção )
