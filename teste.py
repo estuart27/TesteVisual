@@ -18,7 +18,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-GOOGLE_API_KEY = "AIzaSyDrgHpjyAE8-1VPRSUV6HIDq7QAFY55PQw"
+GOOGLE_API_KEY = ""
 client = genai.Client(api_key=GOOGLE_API_KEY)
 
 ADESIVOS_CATALOGO = {
