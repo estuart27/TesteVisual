@@ -1,0 +1,38 @@
+Passo 1: O Ajuste de Ouro (Mudar o Front-end)
+Esse é o erro número 1 de quem vai testar o MVP na rua. Nos códigos HTML que eu te passei, o botão de gerar está apontando para o seu próprio computador.
+
+Você precisa abrir todos os arquivos HTML (do adesivo, da roupa, da tattoo, etc.), rolar até o final no JavaScript (onde tem o fetch), e trocar o localhost:8000 pelo IP do seu servidor ou pelo seu domínio.
+
+Como está hoje:
+
+JavaScript
+const resp = await fetch('http://localhost:8000/gerar-tuning', { ... })
+Como deve ficar (exemplo):
+
+JavaScript
+// Se você tem um domínio:
+const resp = await fetch('https://api.seudominio.com.br/gerar-tuning', { ... })
+
+// Ou se for direto pelo IP do seu servidor:
+const resp = await fetch('http://123.45.67.89:8000/gerar-tuning', { ... })
+Passo 2: O Arquivo .env (Sua Chave)
+Quando você subir o arquivo app.py para o seu servidor, não esqueça de criar o arquivo .env na mesma pasta contendo a sua chave do Gemini. Se ele não encontrar a chave lá, o servidor vai dar erro 500 na hora que o cliente testar.
+
+Dentro do servidor, o arquivo .env deve ter apenas isso:
+
+Plaintext
+API_GEMINI=sua_chave_secreta_aqui_gerada_no_google_studio
+Passo 3: Instalar as Dependências no Servidor
+No terminal do seu servidor, você vai precisar instalar as bibliotecas do Python que usamos no projeto. É só rodar este comando na pasta onde está o seu app.py:
+
+Bash
+pip install fastapi uvicorn pillow google-genai python-dotenv python-multipart
+(Nota: O python-multipart é obrigatório para o FastAPI conseguir ler imagens enviadas via formulário FormData).
+
+Passo 4: Rodar a API em "Background" (Segundo Plano)
+Para colocar no ar, você roda o uvicorn. Mas atenção: se você só rodar uvicorn app:app --host 0.0.0.0 --port 8000 e fechar a janela do terminal (ou desligar seu PC), o servidor cai.
+
+Para deixar ele rodando para sempre no seu servidor, use o comando nohup (que ignora quando você fecha o terminal):
+
+Bash
+nohup uvicorn app:app --host 0.0.0.0 --port 8000 &
