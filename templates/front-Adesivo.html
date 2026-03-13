@@ -323,7 +323,41 @@
             flex-direction: column;
         }
 
-        /* upload zone */
+        /* --- DICA DE ÂNGULO DA MOTO --- */
+        .dica-angulo {
+            background: linear-gradient(90deg, rgba(255,69,0,0.15) 0%, rgba(255,69,0,0.02) 100%);
+            border-left: 3px solid var(--laranja);
+            border-radius: 0 4px 4px 0;
+            padding: 14px 18px;
+            margin-bottom: 20px;
+            display: flex;
+            gap: 14px;
+            align-items: flex-start;
+            animation: pulse-border 3s infinite;
+        }
+        @keyframes pulse-border {
+            0% { border-left-color: var(--laranja); }
+            50% { border-left-color: #ff9d75; }
+            100% { border-left-color: var(--laranja); }
+        }
+        .dica-angulo .dica-icon {
+            font-size: 1.4rem;
+            line-height: 1;
+        }
+        .dica-angulo .dica-texto {
+            font-size: 0.85rem;
+            line-height: 1.4;
+            color: rgba(255,255,255,0.7);
+        }
+        .dica-angulo .dica-texto strong {
+            color: var(--laranja-claro);
+            font-family: 'Barlow Condensed', sans-serif;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            font-size: 0.9rem;
+        }
+
+        /* upload zone da moto */
         .upload-zone {
             background: rgba(255,255,255,0.02);
             border: 2px dashed rgba(255,255,255,0.1);
@@ -402,6 +436,10 @@
         }
         .local-btn:hover { border-color: rgba(255,69,0,0.5); color: var(--laranja); }
         .local-btn.ativo { border-color: var(--laranja); color: var(--laranja); background: rgba(255,69,0,0.08); }
+        
+        /* Destaque para o botão Kit Completo */
+        .local-btn.destaque { border-color: rgba(255,69,0,0.4); color: var(--branco); }
+
         .local-input {
             width: 100%;
             background: rgba(255,255,255,0.04);
@@ -631,20 +669,18 @@
             .col-adesivo { border-right: none; border-bottom: 1px solid rgba(255,255,255,0.06); padding: 32px 24px; }
             .col-moto { padding: 32px 24px; }
             .hero h1 { font-size: 3.2rem; }
+            .dica-angulo { flex-direction: column; gap: 8px; }
         }
     </style>
 </head>
 <body>
 
-<!-- FUNDO CINEMÁTICO -->
 <div class="bg-wrapper">
-    <!-- Troque o src pela sua foto de fundo preferida -->
     <img class="bg-img" src="https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=1920&q=80" alt="background">
     <div class="bg-overlay"></div>
     <div class="bg-grain"></div>
 </div>
 
-<!-- ═══════════════════════════════════ LANDING ═══════════════════════════════════ -->
 <div class="page" id="landing">
     <header>
         <div class="logo">Moto<span>Sticker</span></div>
@@ -661,7 +697,6 @@
     </div>
 </div>
 
-<!-- ═══════════════════════════════════ SIMULADOR ════════════════════════════════ -->
 <div id="simulador">
     <div class="sim-header">
         <button class="btn-voltar" onclick="voltarLanding()">← Voltar</button>
@@ -670,11 +705,9 @@
 
     <div class="sim-body">
 
-        <!-- COLUNA ESQUERDA: Adesivo -->
         <div class="col-adesivo">
             <div class="col-titulo">01 — Adesivo Escolhido</div>
 
-            <!-- Preview / upload do adesivo -->
             <div class="upload-zone-sm" id="adesivoZone" onclick="document.getElementById('fotoAdesivo').click()">
                 <div class="upload-icon">🏷️</div>
                 <div class="upload-txt">Anexar imagem do adesivo</div>
@@ -684,11 +717,16 @@
             <div class="adesivo-nome" id="adesivoNomeTxt"></div>
         </div>
 
-        <!-- COLUNA DIREITA: Foto da Moto -->
         <div class="col-moto">
             <div class="col-titulo">02 — Foto da Sua Moto</div>
 
-            <!-- Upload zone -->
+            <div class="dica-angulo">
+                <div class="dica-icon">💡</div>
+                <div class="dica-texto">
+                    <strong>Dica de Ouro:</strong> Envie uma foto da sua moto <strong>bem iluminada</strong> e focando no ângulo onde o adesivo será colado. Fotos de longe ou escuras podem atrapalhar a mágica da IA!
+                </div>
+            </div>
+
             <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fotoMoto').click()">
                 <div class="upload-icon">📷</div>
                 <div class="upload-txt">Clique para enviar a foto</div>
@@ -696,10 +734,11 @@
             </div>
             <input type="file" id="fotoMoto" accept="image/*" onchange="previaMoto(event)">
 
-            <!-- Onde colar -->
             <div class="local-section">
                 <span class="local-label">03 — Onde deseja colar?</span>
                 <div class="local-opcoes">
+                    <button type="button" class="local-btn destaque" onclick="selecionarLocal('Distribuído nas posições corretas por toda a moto (Kit Completo)', this)">Kit Completo (Moto Toda)</button>
+                    
                     <button type="button" class="local-btn" onclick="selecionarLocal('Tanque de combustível', this)">Tanque</button>
                     <button type="button" class="local-btn" onclick="selecionarLocal('Carenagem lateral', this)">Carenagem</button>
                     <button type="button" class="local-btn" onclick="selecionarLocal('Paralama dianteiro', this)">Paralama</button>
@@ -711,7 +750,6 @@
                     oninput="localCustomizado(this.value)">
             </div>
 
-            <!-- Botão gerar -->
             <button class="btn-gerar" id="gerarBtn" onclick="gerarSimulacao()">
                 Gerar Simulação ✦
             </button>
@@ -724,7 +762,6 @@
     </div>
 </div>
 
-<!-- ═══════════════════════════════════ MODAL RESULTADO ══════════════════════════ -->
 <div class="modal-overlay" id="modalOverlay">
     <div class="modal">
         <div class="modal-top">

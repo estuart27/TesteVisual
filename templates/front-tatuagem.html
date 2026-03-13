@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>InkVision — Simulador de Tatuagem</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800&family=Montserrat:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <style>
+        /* BASE CSS OMITIDO PARA ECONOMIZAR ESPAÇO (Use a mesma estrutura do FitPro) */
+        :root { --destaque: #D91A2A; --destaque-claro: #FF3344; --preto: #030303; --cinza-escuro: #0f0f0f; --branco: #EAEAEA; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Montserrat', sans-serif; }
+        body { background: var(--preto); color: var(--branco); min-height: 100vh; }
+        .bg-wrapper { position: fixed; inset: 0; z-index: -1; }
+        .bg-img { width: 100%; height: 100%; object-fit: cover; filter: brightness(0.15) grayscale(0.5); }
+        .bg-overlay { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(3,3,3,0.8) 0%, rgba(3,3,3,0.95) 100%); }
+        
+        header { padding: 24px 48px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(217,26,42,0.2); }
+        .logo { font-family: 'Cinzel', serif; font-size: 2.2rem; font-weight: 800; color: var(--branco); letter-spacing: 2px;}
+        .logo span { color: var(--destaque); }
+        
+        .hero { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 80vh; text-align: center; }
+        .hero h1 { font-family: 'Cinzel', serif; font-size: 4.5rem; margin-bottom: 20px; text-transform: uppercase; }
+        .btn-cta { background: var(--destaque); color: white; padding: 20px 50px; font-weight: 800; letter-spacing: 2px; border: none; cursor: pointer; text-transform: uppercase; border-radius: 2px; }
+        .btn-cta:hover { background: var(--destaque-claro); box-shadow: 0 0 20px rgba(217,26,42,0.4); }
+
+        #simulador { display: none; padding: 40px; }
+        .sim-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; max-width: 1200px; margin: 0 auto; }
+        .upload-zone { border: 1px dashed rgba(255,255,255,0.2); background: rgba(255,255,255,0.03); padding: 40px; text-align: center; cursor: pointer; border-radius: 4px; position: relative; }
+        .upload-zone:hover { border-color: var(--destaque); background: rgba(217,26,42,0.05); }
+        .upload-zone img { max-width: 100%; max-height: 300px; }
+        input[type="file"] { display: none; }
+
+        .dica { background: rgba(217,26,42,0.1); border-left: 4px solid var(--destaque); padding: 15px; margin-bottom: 20px; font-size: 0.85rem; }
+        
+        .opcoes-grid { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 20px; margin-bottom: 20px;}
+        .btn-opcao { background: transparent; border: 1px solid #333; color: #aaa; padding: 10px 20px; cursor: pointer; text-transform: uppercase; font-size: 0.8rem; font-weight: 600;}
+        .btn-opcao.ativo, .btn-opcao:hover { border-color: var(--destaque); color: var(--destaque); }
+        .input-custom { width: 100%; background: #111; border: 1px solid #333; color: white; padding: 15px; margin-bottom: 20px;}
+
+        /* Modal simplificado pro código caber */
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 100; flex-direction: column; align-items: center; justify-content: center; }
+        .modal img { max-width: 90%; max-height: 80vh; border: 2px solid var(--destaque); }
+        .fechar { position: absolute; top: 20px; right: 40px; color: white; font-size: 2rem; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <div class="bg-wrapper">
+        <img class="bg-img" src="https://images.unsplash.com/photo-1611501275019-9b5cda994e8d?w=1920&q=80" alt="Studio">
+        <div class="bg-overlay"></div>
+    </div>
+
+    <div id="landing">
+        <header><div class="logo">INK<span>VISION</span></div></header>
+        <div class="hero">
+            <h1>Sua Ideia,<br>Na Sua Pele.</h1>
+            <p style="margin-bottom: 40px;">Simule sua próxima tatuagem com perfeição anatômica antes de sentir a agulha.</p>
+            <button class="btn-cta" onclick="document.getElementById('landing').style.display='none'; document.getElementById('simulador').style.display='block';">Testar Decalque</button>
+        </div>
+    </div>
+
+    <div id="simulador">
+        <h2 style="text-align: center; margin-bottom: 40px; font-family: 'Cinzel'; color: var(--destaque);">Preparação da Arte</h2>
+        <div class="sim-grid">
+            <div>
+                <h3>1. A Arte (Decalque)</h3>
+                <p style="font-size: 0.8rem; color: #888; margin-bottom: 20px;">Use imagens com fundo transparente (PNG) ou fundo 100% branco.</p>
+                <div class="upload-zone" onclick="document.getElementById('fotoArte').click()" id="arteZone">
+                    <p>+ Anexar Desenho</p>
+                </div>
+                <input type="file" id="fotoArte" onchange="preview(event, 'arteZone')">
+            </div>
+
+            <div>
+                <h3>2. O Local do Corpo</h3>
+                <div class="dica"><strong>DICA:</strong> Evite fotos com muita sombra ou flash estourado. A foto reta da região limpa gera os melhores resultados.</div>
+                <div class="upload-zone" onclick="document.getElementById('fotoCorpo').click()" id="corpoZone" style="margin-bottom: 20px;">
+                    <p>+ Anexar Foto da Pele</p>
+                </div>
+                <input type="file" id="fotoCorpo" onchange="preview(event, 'corpoZone')">
+
+                <h3>3. Onde vamos tatuar?</h3>
+                <div class="opcoes-grid">
+                    <button class="btn-opcao ativo" onclick="sel('Antebraço interno', this)">Antebraço</button>
+                    <button class="btn-opcao" onclick="sel('Bíceps externo', this)">Bíceps</button>
+                    <button class="btn-opcao" onclick="sel('Centro do peito', this)">Peito</button>
+                    <button class="btn-opcao" onclick="sel('Panturrilha', this)">Panturrilha</button>
+                    <button class="btn-opcao" onclick="sel('Costas', this)">Costas</button>
+                </div>
+                <input type="text" class="input-custom" id="localText" placeholder="Outro local? Digite aqui...">
+
+                <button class="btn-cta" style="width: 100%;" onclick="gerarTattoo()">Tatuar Virtualmente</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="modal">
+        <span class="fechar" onclick="document.getElementById('modal').style.display='none'">&times;</span>
+        <img id="imgFinal" src="">
+        <button class="btn-cta" style="margin-top: 20px; background: #25D366;" onclick="window.open('https://wa.me/55?text=Quero%20agendar%20essa%20tattoo!')">Agendar Sessão</button>
+    </div>
+
+    <script>
+        let localTattoo = 'Antebraço interno';
+        let arteFile, corpoFile;
+
+        function preview(e, zoneId) {
+            const file = e.target.files[0];
+            if(!file) return;
+            if(zoneId === 'arteZone') arteFile = file;
+            if(zoneId === 'corpoZone') corpoFile = file;
+            const url = URL.createObjectURL(file);
+            document.getElementById(zoneId).innerHTML = `<img src="${url}" style="width:100%; height:100%; object-fit:contain;">`;
+        }
+
+        function sel(txt, el) {
+            document.querySelectorAll('.btn-opcao').forEach(b => b.classList.remove('ativo'));
+            el.classList.add('ativo');
+            localTattoo = txt;
+            document.getElementById('localText').value = '';
+        }
+        document.getElementById('localText').addEventListener('input', (e) => {
+            document.querySelectorAll('.btn-opcao').forEach(b => b.classList.remove('ativo'));
+            localTattoo = e.target.value;
+        });
+
+        async function gerarTattoo() {
+            if(!arteFile || !corpoFile) return alert("Faltam imagens!");
+            const formData = new FormData();
+            formData.append('foto_corpo', corpoFile);
+            formData.append('foto_desenho', arteFile);
+            formData.append('local_tattoo', localTattoo);
+
+            // Troque o fetch pelo endpoint correto
+            const btn = document.querySelector('button[onclick="gerarTattoo()"]');
+            btn.innerText = "Processando Agulhas...";
+            try {
+                const resp = await fetch('http://localhost:8000/gerar-tatuagem', { method: 'POST', body: formData });
+                const dados = await resp.json();
+                if(dados.sucesso) {
+                    document.getElementById('imgFinal').src = `data:image/png;base64,${dados.imagem_final}`;
+                    document.getElementById('modal').style.display = 'flex';
+                } else alert(dados.erro);
+            } catch(e) { alert("Erro no servidor"); }
+            btn.innerText = "Tatuar Virtualmente";
+        }
+    </script>
+</body>
+</html>

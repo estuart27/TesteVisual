@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Provador Virtual — Experimente Antes de Comprar</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* Paleta de Moda (Dourado/Bege e Preto Elegante) */
+            --destaque: #D4AF37; /* Dourado */
+            --destaque-claro: #F3D573;
+            --preto: #050505;
+            --cinza-escuro: #121212;
+            --cinza: #1A1A1A;
+            --branco: #F8F8F8;
+            --branco-suave: rgba(248,248,248,0.85);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--preto);
+            color: var(--branco);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* ── FUNDO CINEMATOGRÁFICO ── */
+        .bg-wrapper { position: fixed; inset: 0; z-index: 0; }
+        .bg-img {
+            width: 100%; height: 100%; object-fit: cover;
+            filter: brightness(0.2) saturate(0.8);
+        }
+        .bg-overlay {
+            position: absolute; inset: 0;
+            background: linear-gradient(180deg, rgba(5,5,5,0.6) 0%, transparent 40%, rgba(5,5,5,0.9) 100%);
+        }
+
+        /* ── CONTEÚDO PRINCIPAL ── */
+        .page { position: relative; z-index: 1; min-height: 100vh; display: flex; flex-direction: column; }
+
+        /* ── HEADER ── */
+        header { padding: 28px 48px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(212,175,55,0.15); }
+        .logo { font-family: 'Playfair Display', serif; font-size: 2rem; font-weight: 700; letter-spacing: 1px; color: var(--branco); }
+        .logo span { color: var(--destaque); font-style: italic; }
+        .badge { font-size: 0.75rem; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; color: var(--destaque); border: 1px solid rgba(212,175,55,0.4); padding: 6px 14px; border-radius: 20px; }
+
+        /* ── HERO ── */
+        .hero { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 80px 24px; text-align: center; }
+        .hero-eyebrow { font-size: 0.8rem; font-weight: 600; letter-spacing: 4px; text-transform: uppercase; color: var(--destaque); margin-bottom: 20px; opacity: 0; animation: fadeUp 0.6s ease forwards 0.2s; }
+        .hero h1 { font-family: 'Playfair Display', serif; font-size: clamp(3rem, 7vw, 5.5rem); line-height: 1.1; margin-bottom: 24px; opacity: 0; animation: fadeUp 0.6s ease forwards 0.4s; }
+        .hero h1 em { color: var(--destaque); }
+        .hero p { font-size: 1.1rem; font-weight: 300; color: rgba(248,248,248,0.7); max-width: 500px; line-height: 1.7; margin-bottom: 48px; opacity: 0; animation: fadeUp 0.6s ease forwards 0.6s; }
+        .btn-cta { font-family: 'Inter', sans-serif; font-size: 1rem; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; color: var(--preto); background: var(--destaque); border: none; padding: 20px 52px; cursor: pointer; border-radius: 4px; transition: all 0.3s ease; opacity: 0; animation: fadeUp 0.6s ease forwards 0.8s; }
+        .btn-cta:hover { background: var(--destaque-claro); transform: translateY(-2px); box-shadow: 0 12px 30px rgba(212,175,55,0.25); }
+
+        /* ── SIMULADOR ── */
+        #simulador { display: none; position: relative; z-index: 1; min-height: 100vh; }
+        .sim-header { padding: 28px 48px; display: flex; align-items: center; gap: 24px; border-bottom: 1px solid rgba(212,175,55,0.15); }
+        .btn-voltar { background: none; border: 1px solid rgba(255,255,255,0.15); color: var(--branco); font-size: 0.85rem; letter-spacing: 2px; text-transform: uppercase; padding: 8px 18px; cursor: pointer; transition: all 0.2s; border-radius: 4px; }
+        .btn-voltar:hover { border-color: var(--destaque); color: var(--destaque); }
+        .sim-header .logo { font-size: 1.5rem; }
+
+        .sim-body { display: grid; grid-template-columns: 1fr 1fr; gap: 0; min-height: calc(100vh - 90px); }
+        .col-roupa { border-right: 1px solid rgba(255,255,255,0.06); padding: 48px; display: flex; flex-direction: column; justify-content: center; }
+        .col-pessoa { padding: 48px; display: flex; flex-direction: column; }
+        
+        .col-titulo { font-size: 0.75rem; font-weight: 600; letter-spacing: 3px; text-transform: uppercase; color: var(--destaque); margin-bottom: 28px; display: flex; align-items: center; gap: 10px; }
+        .col-titulo::after { content: ''; flex: 1; height: 1px; background: rgba(212,175,55,0.2); }
+
+        /* Upload Zones */
+        .upload-zone-sm, .upload-zone { background: rgba(255,255,255,0.02); border: 1px dashed rgba(255,255,255,0.2); border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; transition: all 0.3s; text-align: center; position: relative; overflow: hidden; }
+        .upload-zone-sm { padding: 32px 24px; }
+        .upload-zone { aspect-ratio: 3/4; margin-bottom: 28px; } /* Proporção de foto de corpo */
+        .upload-zone-sm:hover, .upload-zone:hover { border-color: var(--destaque); background: rgba(212,175,55,0.05); }
+        .upload-zone-sm.tem-img, .upload-zone.tem-foto { border-style: solid; border-color: rgba(212,175,55,0.4); padding: 0; }
+        .upload-zone-sm.tem-img { aspect-ratio: 1; }
+        
+        .preview-img { width: 100%; height: 100%; position: absolute; inset: 0; }
+        .preview-roupa { object-fit: contain; padding: 24px; filter: drop-shadow(0 0 15px rgba(255,255,255,0.1)); }
+        .preview-pessoa { object-fit: cover; }
+        
+        .upload-icon { font-size: 2rem; margin-bottom: 10px; opacity: 0.6; }
+        .upload-txt { font-size: 0.85rem; font-weight: 500; letter-spacing: 1px; text-transform: uppercase; color: rgba(255,255,255,0.5); }
+        .upload-subtxt { font-size: 0.75rem; color: rgba(255,255,255,0.3); margin-top: 8px; }
+        input[type="file"] { display: none; }
+        .trocar-btn { position: absolute; bottom: 10px; right: 10px; font-size: 0.7rem; letter-spacing: 1px; text-transform: uppercase; background: rgba(0,0,0,0.7); border: 1px solid rgba(212,175,55,0.4); color: var(--destaque); padding: 6px 12px; cursor: pointer; border-radius: 4px; }
+        .nome-arquivo { font-size: 0.8rem; font-weight: 500; letter-spacing: 1px; color: rgba(255,255,255,0.4); text-align: center; margin-top: 14px; }
+
+        /* Dica de Ângulo (Moda) */
+        .dica-angulo { background: linear-gradient(90deg, rgba(212,175,55,0.1) 0%, transparent 100%); border-left: 3px solid var(--destaque); border-radius: 0 4px 4px 0; padding: 16px 20px; margin-bottom: 24px; display: flex; gap: 14px; align-items: flex-start; }
+        .dica-icon { font-size: 1.4rem; }
+        .dica-texto { font-size: 0.85rem; line-height: 1.5; color: rgba(255,255,255,0.8); }
+        .dica-texto strong { color: var(--destaque-claro); font-weight: 600; text-transform: uppercase; font-size: 0.8rem; letter-spacing: 1px; display: block; margin-bottom: 4px;}
+
+        /* Opções */
+        .local-section { margin-bottom: 32px; }
+        .local-label { font-size: 0.75rem; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; color: rgba(255,255,255,0.5); margin-bottom: 12px; display: block; }
+        .local-opcoes { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 14px; }
+        .local-btn { font-family: 'Inter', sans-serif; font-size: 0.8rem; font-weight: 500; letter-spacing: 1px; text-transform: uppercase; background: transparent; border: 1px solid rgba(255,255,255,0.2); color: rgba(255,255,255,0.6); padding: 10px 18px; cursor: pointer; border-radius: 30px; transition: all 0.2s; }
+        .local-btn:hover { border-color: rgba(212,175,55,0.6); color: var(--destaque); }
+        .local-btn.ativo { border-color: var(--destaque); color: var(--preto); background: var(--destaque); font-weight: 600; }
+        
+        .local-input { width: 100%; background: transparent; border: 1px solid rgba(255,255,255,0.15); color: var(--branco); font-family: 'Inter', sans-serif; font-size: 0.9rem; padding: 14px 18px; border-radius: 4px; outline: none; transition: border-color 0.2s; }
+        .local-input:focus { border-color: var(--destaque); }
+
+        /* Botão Gerar */
+        .btn-gerar { font-family: 'Playfair Display', serif; font-size: 1.4rem; font-weight: 700; letter-spacing: 2px; color: var(--preto); background: var(--destaque); border: none; padding: 20px; width: 100%; cursor: pointer; border-radius: 4px; transition: all 0.3s; margin-top: auto; }
+        .btn-gerar:hover:not(:disabled) { background: var(--destaque-claro); transform: translateY(-2px); box-shadow: 0 12px 30px rgba(212,175,55,0.25); }
+        .btn-gerar:disabled { background: #333; color: #666; cursor: not-allowed; transform: none; box-shadow: none; }
+
+        /* Loader */
+        .loader-bar { display: none; margin-top: 16px; text-align: center; }
+        .loader-bar .dots { font-size: 0.75rem; font-weight: 600; letter-spacing: 3px; text-transform: uppercase; color: var(--destaque); }
+        .progress { width: 100%; height: 2px; background: rgba(255,255,255,0.1); margin-top: 10px; overflow: hidden; border-radius: 2px; }
+        .progress-fill { height: 100%; background: var(--destaque); width: 0%; animation: progressAnim 12s cubic-bezier(0.1, 0.7, 0.1, 1) forwards; }
+        @keyframes progressAnim { 0% { width: 0%; } 100% { width: 95%; } }
+
+        /* ── MODAL RESULTADO ── */
+        .modal-overlay { display: none; position: fixed; inset: 0; z-index: 100; background: rgba(0,0,0,0.95); backdrop-filter: blur(10px); align-items: center; justify-content: center; padding: 24px; }
+        .modal-overlay.visivel { display: flex; animation: fadeIn 0.3s ease; }
+        .modal { background: var(--cinza-escuro); border: 1px solid rgba(212,175,55,0.2); border-radius: 8px; max-width: 600px; width: 100%; max-height: 95vh; overflow: hidden; display: flex; flex-direction: column; animation: scaleIn 0.3s ease; }
+        .modal-top { padding: 20px 28px; border-bottom: 1px solid rgba(255,255,255,0.06); display: flex; align-items: center; justify-content: space-between; }
+        .modal-titulo { font-family: 'Playfair Display', serif; font-size: 1.5rem; letter-spacing: 1px; color: var(--branco); }
+        .modal-titulo span { color: var(--destaque); font-style: italic; }
+        .modal-fechar { background: none; border: none; color: rgba(255,255,255,0.5); font-size: 1.5rem; cursor: pointer; transition: color 0.2s; }
+        .modal-fechar:hover { color: var(--destaque); }
+
+        .modal-viewer { flex: 1; overflow: hidden; position: relative; background: #050505; display: flex; align-items: center; justify-content: center; min-height: 500px; }
+        .modal-img { max-width: 100%; max-height: 70vh; object-fit: contain; }
+
+        .modal-bottom { padding: 20px 28px; border-top: 1px solid rgba(255,255,255,0.06); display: flex; gap: 12px; }
+        .btn-whatsapp { flex: 1; font-family: 'Inter', sans-serif; font-size: 0.95rem; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; color: white; background: #25D366; border: none; padding: 16px; cursor: pointer; border-radius: 4px; transition: all 0.2s; }
+        .btn-whatsapp:hover { background: #1ebe57; transform: translateY(-1px); }
+        .btn-refazer { font-family: 'Inter', sans-serif; font-size: 0.85rem; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; background: transparent; border: 1px solid rgba(255,255,255,0.2); color: rgba(255,255,255,0.7); padding: 16px 24px; cursor: pointer; border-radius: 4px; transition: all 0.2s; }
+        .btn-refazer:hover { border-color: var(--destaque); color: var(--destaque); }
+
+        /* Animações */
+        @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes scaleIn { from { opacity: 0; transform: scale(0.97); } to { opacity: 1; transform: scale(1); } }
+
+        @media (max-width: 768px) {
+            header, .sim-header { padding: 20px 24px; }
+            .sim-body { grid-template-columns: 1fr; }
+            .col-roupa { border-right: none; border-bottom: 1px solid rgba(255,255,255,0.06); padding: 32px 24px; }
+            .col-pessoa { padding: 32px 24px; }
+            .hero h1 { font-size: 3rem; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="bg-wrapper">
+    <img class="bg-img" src="https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=1920&q=80" alt="background">
+    <div class="bg-overlay"></div>
+</div>
+
+<div class="page" id="landing">
+    <header>
+        <div class="logo">Fit<span>Pro</span></div>
+        <div class="badge">Provador Virtual</div>
+    </header>
+
+    <div class="hero">
+        <div class="hero-eyebrow">✦ O Futuro do Varejo ✦</div>
+        <h1>Prove a roupa<br>sem sair de <em>casa</em></h1>
+        <p>Escolha a peça do catálogo, envie uma foto sua e nossa inteligência artificial veste o look em você instantaneamente.</p>
+        <button class="btn-cta" onclick="abrirSimulador()">
+            Experimentar no Corpo
+        </button>
+    </div>
+</div>
+
+<div id="simulador">
+    <div class="sim-header">
+        <button class="btn-voltar" onclick="voltarLanding()">← Voltar</button>
+        <div class="logo">Fit<span>Pro</span></div>
+    </div>
+
+    <div class="sim-body">
+        <div class="col-roupa">
+            <div class="col-titulo">01 — Peça de Roupa</div>
+            
+            <div class="upload-zone-sm" id="roupaZone" onclick="document.getElementById('fotoRoupa').click()">
+                <div class="upload-icon">👗</div>
+                <div class="upload-txt">Anexar imagem da roupa</div>
+                <div class="upload-subtxt">Fundo branco ou transparente</div>
+            </div>
+            <input type="file" id="fotoRoupa" accept="image/*" onchange="previaRoupa(event)">
+            <div class="nome-arquivo" id="roupaNomeTxt"></div>
+        </div>
+
+        <div class="col-pessoa">
+            <div class="col-titulo">02 — Foto do Seu Corpo</div>
+
+            <div class="dica-angulo">
+                <div class="dica-icon">✨</div>
+                <div class="dica-texto">
+                    <strong>Como tirar a foto perfeita:</strong>
+                    Tire uma foto de corpo inteiro, de frente, em um local bem iluminado. Para a IA entender seu manequim, <b>use roupas justas ou básicas</b> (ex: top e legging).
+                </div>
+            </div>
+
+            <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fotoPessoa').click()">
+                <div class="upload-icon">📸</div>
+                <div class="upload-txt">Clique para enviar sua foto</div>
+                <div class="upload-subtxt">Foto de corpo inteiro e de frente</div>
+            </div>
+            <input type="file" id="fotoPessoa" accept="image/*" onchange="previaPessoa(event)">
+
+            <div class="local-section">
+                <span class="local-label">03 — Qual é o tipo da peça?</span>
+                <div class="local-opcoes">
+                    <button type="button" class="local-btn ativo" onclick="selecionarPeca('Look Completo', this)">Look Completo</button>
+                    <button type="button" class="local-btn" onclick="selecionarPeca('Camiseta / Blusa (Parte de cima)', this)">Camiseta / Blusa</button>
+                    <button type="button" class="local-btn" onclick="selecionarPeca('Calça / Bermuda (Parte de baixo)', this)">Calça / Saia</button>
+                    <button type="button" class="local-btn" onclick="selecionarPeca('Vestido / Macacão', this)">Vestido</button>
+                    <button type="button" class="local-btn" onclick="selecionarPeca('Jaqueta / Casaco', this)">Casaco</button>
+                </div>
+                <input type="text" class="local-input" id="pecaCustom" placeholder="Ou digite o que é (ex: Moletom oversized)..." oninput="pecaCustomizada(this.value)">
+            </div>
+
+            <button class="btn-gerar" id="gerarBtn" onclick="gerarProvador()">
+                Ver no meu corpo
+            </button>
+
+            <div class="loader-bar" id="loader">
+                <div class="dots">Ajustando caimento e medidas</div>
+                <div class="progress"><div class="progress-fill" id="progressFill"></div></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="modalOverlay">
+    <div class="modal">
+        <div class="modal-top">
+            <div class="modal-titulo">Seu Novo <span>Look</span></div>
+            <button class="modal-fechar" onclick="fecharModal()">✕</button>
+        </div>
+        <div class="modal-viewer">
+            <img class="modal-img" id="modalImg" src="" alt="Resultado">
+        </div>
+        <div class="modal-bottom">
+            <button class="btn-whatsapp" id="btnWhatsapp">
+                🛍️ Comprar este Look
+            </button>
+            <button class="btn-refazer" onclick="fecharModal()">
+                Tentar Outro
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let roupaFile = null;
+    let nomeRoupaSelecionada = 'Look';
+    let tipoPeca = 'Look Completo'; // Padrão
+
+    function abrirSimulador() {
+        document.getElementById('landing').style.display = 'none';
+        document.getElementById('simulador').style.display = 'block';
+        window.scrollTo(0, 0);
+    }
+    function voltarLanding() {
+        document.getElementById('simulador').style.display = 'none';
+        document.getElementById('landing').style.display = 'flex';
+    }
+
+    function previaRoupa(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        roupaFile = file;
+        nomeRoupaSelecionada = file.name.replace(/\.[^.]+$/, '');
+        const url = URL.createObjectURL(file);
+        const zone = document.getElementById('roupaZone');
+        zone.classList.add('tem-img');
+        zone.innerHTML = `
+            <img class="preview-img preview-roupa" src="${url}" alt="Roupa">
+            <button class="trocar-btn" onclick="event.stopPropagation();document.getElementById('fotoRoupa').click()">Trocar</button>
+        `;
+        document.getElementById('roupaNomeTxt').innerText = nomeRoupaSelecionada;
+    }
+
+    function previaPessoa(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        const url = URL.createObjectURL(file);
+        const zone = document.getElementById('uploadZone');
+        zone.classList.add('tem-foto');
+        zone.innerHTML = `
+            <img class="preview-img preview-pessoa" src="${url}" alt="Pessoa">
+            <button class="trocar-btn" onclick="event.stopPropagation();document.getElementById('fotoPessoa').click()">Mudar Foto</button>
+        `;
+    }
+
+    function selecionarPeca(texto, el) {
+        document.querySelectorAll('.local-btn').forEach(b => b.classList.remove('ativo'));
+        el.classList.add('ativo');
+        tipoPeca = texto;
+        document.getElementById('pecaCustom').value = '';
+    }
+    function pecaCustomizada(val) {
+        document.querySelectorAll('.local-btn').forEach(b => b.classList.remove('ativo'));
+        tipoPeca = val;
+    }
+
+    async function gerarProvador() {
+        const fotoPessoaInput = document.getElementById('fotoPessoa').files[0];
+        if (!roupaFile)  return alert('Anexe a imagem da roupa.');
+        if (!fotoPessoaInput) return alert('Envie a sua foto de corpo.');
+        if (!tipoPeca) return alert('Selecione o tipo de peça.');
+
+        const btn = document.getElementById('gerarBtn');
+        const loader = document.getElementById('loader');
+        btn.disabled = true;
+        loader.style.display = 'block';
+        
+        const fill = document.getElementById('progressFill');
+        fill.style.animation = 'none';
+        fill.offsetHeight;
+        fill.style.animation = 'progressAnim 12s cubic-bezier(0.1, 0.7, 0.1, 1) forwards';
+
+        const formData = new FormData();
+        formData.append('foto_pessoa', fotoPessoaInput);
+        formData.append('foto_roupa', roupaFile);
+        formData.append('tipo_peca', tipoPeca);
+
+        try {
+            // AJUSTE A URL PARA A SUA API (agora o endpoint mudou para /gerar-provador)
+            const resp = await fetch('http://localhost:8000/gerar-provador', {
+                method: 'POST',
+                body: formData
+            });
+            const dados = await resp.json();
+            if (dados.sucesso) {
+                abrirModal(dados.imagem_final);
+            } else {
+                alert('Erro ao processar look: ' + dados.erro);
+            }
+        } catch (err) {
+            alert('Erro de comunicação com o servidor estilista.');
+            console.error(err);
+        } finally {
+            btn.disabled = false;
+            loader.style.display = 'none';
+        }
+    }
+
+    function abrirModal(base64) {
+        const img = document.getElementById('modalImg');
+        img.src = `data:image/png;base64,${base64}`;
+
+        document.getElementById('btnWhatsapp').onclick = () => {
+            const msg = `Olá! Usei o Provador Virtual e adorei como ficou! Quero mais informações sobre: ${nomeRoupaSelecionada}.`;
+            window.open(`https://wa.me/55NUMERO_AQUI?text=${encodeURIComponent(msg)}`, '_blank');
+        };
+
+        document.getElementById('modalOverlay').classList.add('visivel');
+    }
+    
+    function fecharModal() {
+        document.getElementById('modalOverlay').classList.remove('visivel');
+    }
+</script>
+</body>
+</html>
