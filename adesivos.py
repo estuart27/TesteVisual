@@ -113,6 +113,8 @@ async def gerar_simulacao(
         print(f"Erro interno: {str(e)}") # Loga no terminal do servidor
         return JSONResponse(content={"sucesso": False, "erro": "Não foi possível gerar a simulação no momento. Tente novamente."})
 
+
+
 @app.get("/")
 def ler_raiz():
     return {"mensagem": "API MotoSticker rodando!"}

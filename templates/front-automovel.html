@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AutoMod — Simulador Automotivo</title>
+    <link href="https://fonts.googleapis.com/css2?family=Teko:wght@400;600;700&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root { 
+            --destaque: #00E5FF; /* Azul Neon/Elétrico */
+            --destaque-hover: #00B3CC;
+            --fundo: #090A0F;
+            --card-bg: #12141D;
+            --texto-claro: #F0F4F8;
+            --texto-muted: #8B95A5;
+        }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Rajdhani', sans-serif; }
+        body { background: var(--fundo); color: var(--texto-claro); min-height: 100vh; overflow-x: hidden; }
+
+        /* Background com textura/vibe carbono */
+        .bg-wrapper { position: fixed; inset: 0; z-index: -1; }
+        .bg-img { width: 100%; height: 100%; object-fit: cover; filter: brightness(0.2) contrast(1.2); }
+        .bg-overlay { position: absolute; inset: 0; background: radial-gradient(circle at center, transparent 0%, var(--fundo) 100%); }
+
+        header { padding: 20px 50px; border-bottom: 1px solid rgba(0, 229, 255, 0.2); display: flex; justify-content: space-between; align-items: center; background: rgba(9, 10, 15, 0.8); backdrop-filter: blur(10px); }
+        .logo { font-family: 'Teko', sans-serif; font-size: 2.5rem; letter-spacing: 2px; text-transform: uppercase; line-height: 1; }
+        .logo span { color: var(--destaque); }
+
+        .hero { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 80vh; text-align: center; padding: 0 20px; }
+        .hero h1 { font-family: 'Teko', sans-serif; font-size: 5rem; letter-spacing: 2px; line-height: 0.9; margin-bottom: 20px; text-transform: uppercase; }
+        .hero p { font-size: 1.3rem; color: var(--texto-muted); margin-bottom: 40px; max-width: 600px; }
+        
+        .btn-cta { background: transparent; border: 2px solid var(--destaque); color: var(--destaque); font-family: 'Teko', sans-serif; font-size: 1.5rem; padding: 10px 40px; cursor: pointer; text-transform: uppercase; letter-spacing: 2px; transition: all 0.3s; clip-path: polygon(15px 0, 100% 0, calc(100% - 15px) 100%, 0 100%); }
+        .btn-cta:hover { background: var(--destaque); color: var(--fundo); box-shadow: 0 0 20px rgba(0,229,255,0.4); }
+
+        #simulador { display: none; padding: 40px 20px; max-width: 1100px; margin: 0 auto; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
+        
+        .panel { background: var(--card-bg); border: 1px solid rgba(255,255,255,0.05); padding: 30px; border-radius: 8px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        h3 { font-family: 'Teko', sans-serif; font-size: 2rem; letter-spacing: 1px; color: var(--destaque); margin-bottom: 20px; text-transform: uppercase; border-bottom: 1px solid rgba(0,229,255,0.1); padding-bottom: 10px; }
+
+        .upload-zone { border: 2px dashed rgba(255,255,255,0.1); background: rgba(0,0,0,0.3); padding: 40px 20px; text-align: center; cursor: pointer; border-radius: 4px; transition: 0.3s; margin-bottom: 20px; position: relative; }
+        .upload-zone:hover { border-color: var(--destaque); background: rgba(0,229,255,0.05); }
+        .upload-zone img { max-width: 100%; max-height: 200px; object-fit: contain; }
+        input[type="file"] { display: none; }
+        .icon { font-size: 2rem; margin-bottom: 10px; opacity: 0.5; }
+
+        /* Alerta crítico para o usuário automotivo */
+        .alerta-carro { background: rgba(0, 229, 255, 0.1); border-left: 4px solid var(--destaque); padding: 15px; margin-bottom: 25px; font-size: 0.95rem; color: #D0D0D0; }
+        .alerta-carro strong { color: var(--destaque); font-weight: 700; }
+
+        .opcoes-wrap { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px; }
+        .btn-opcao { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); color: var(--texto-claro); padding: 8px 16px; cursor: pointer; font-size: 1rem; font-weight: 500; transition: 0.2s; border-radius: 2px; }
+        .btn-opcao.ativo, .btn-opcao:hover { border-color: var(--destaque); background: rgba(0,229,255,0.1); color: var(--destaque); }
+        .input-custom { width: 100%; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.1); color: white; padding: 12px; margin-bottom: 30px; font-size: 1rem; outline: none; }
+        .input-custom:focus { border-color: var(--destaque); }
+
+        /* Loader estilo painel */
+        #loader { display: none; text-align: center; margin-top: 20px; }
+        .progress-bar { width: 100%; height: 4px; background: #222; margin-top: 10px; overflow: hidden; position: relative; }
+        .progress-fill { height: 100%; background: var(--destaque); width: 0%; box-shadow: 0 0 10px var(--destaque); animation: loading 8s ease forwards; }
+        @keyframes loading { to { width: 95%; } }
+
+        /* Modal */
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 100; flex-direction: column; align-items: center; justify-content: center; }
+        .modal img { max-width: 90%; max-height: 70vh; border-radius: 4px; box-shadow: 0 20px 50px rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.1); }
+        .fechar { position: absolute; top: 30px; right: 50px; color: var(--texto-muted); font-size: 2.5rem; cursor: pointer; transition: 0.3s; }
+        .fechar:hover { color: var(--destaque); }
+        .modal-actions { margin-top: 30px; display: flex; gap: 20px; }
+        
+        .btn-solid { background: var(--destaque); border: none; color: var(--fundo); font-family: 'Teko'; font-size: 1.5rem; padding: 10px 40px; cursor: pointer; text-transform: uppercase; clip-path: polygon(15px 0, 100% 0, calc(100% - 15px) 100%, 0 100%); transition: 0.3s;}
+        .btn-solid:hover { background: white; }
+
+        @media (max-width: 768px) {
+            .grid { grid-template-columns: 1fr; }
+            .hero h1 { font-size: 3.5rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-wrapper">
+        <img class="bg-img" src="https://images.unsplash.com/photo-1562911791-c7a97b729ec5?w=1920&q=80" alt="Garagem">
+        <div class="bg-overlay"></div>
+    </div>
+
+    <div id="landing">
+        <header>
+            <div class="logo">Auto<span>Mod</span></div>
+        </header>
+        <div class="hero">
+            <h1>Construa seu<br>Projeto Ideal</h1>
+            <p>Simule troca de rodas e envelopamento no seu carro usando nossa Inteligência Artificial de alta precisão.</p>
+            <button class="btn-cta" onclick="document.getElementById('landing').style.display='none'; document.getElementById('simulador').style.display='block';">Iniciar Configuração</button>
+        </div>
+    </div>
+
+    <div id="simulador">
+        <div class="grid">
+            <div class="panel">
+                <h3>1. Componente / Arte</h3>
+                <div class="upload-zone" id="arteZone" onclick="document.getElementById('fotoAcessorio').click()">
+                    <div class="icon">⚙️</div>
+                    <p>Fazer upload da Roda (PNG) ou Arte do Adesivo</p>
+                </div>
+                <input type="file" id="fotoAcessorio" onchange="preview(event, 'arteZone')">
+            </div>
+
+            <div class="panel">
+                <h3>2. O Veículo</h3>
+                
+                <div class="alerta-carro">
+                    <strong>IMPORTANTE PARA RODAS:</strong> Para simular troca de rodas perfeitamente, tire a foto do seu carro exatamente <strong>de lado (perfil)</strong>.
+                </div>
+
+                <div class="upload-zone" id="carroZone" onclick="document.getElementById('fotoCarro').click()">
+                    <div class="icon">📸</div>
+                    <p>Fazer upload da foto do Carro</p>
+                </div>
+                <input type="file" id="fotoCarro" onchange="preview(event, 'carroZone')">
+
+                <h3>3. Tipo de Projeto</h3>
+                <div class="opcoes-wrap">
+                    <button class="btn-opcao ativo" onclick="sel('Substituir as duas rodas por este novo modelo de roda', this)">Rodas Novas (Ambas)</button>
+                    <button class="btn-opcao" onclick="sel('Envelopamento lateral completo com esta arte', this)">Envelopamento Lateral</button>
+                    <button class="btn-opcao" onclick="sel('Adesivo no capô', this)">Adesivo no Capô</button>
+                    <button class="btn-opcao" onclick="sel('Envelopamento do teto', this)">Teto</button>
+                </div>
+                <input type="text" id="localText" class="input-custom" placeholder="Especificar (ex: Plotagem na porta do motorista)...">
+
+                <button class="btn-cta" style="width: 100%; background: rgba(0,229,255,0.1);" onclick="gerarTuning()">Aplicar Modificações</button>
+                
+                <div id="loader">
+                    <p style="font-family: 'Teko'; font-size: 1.2rem; color: var(--destaque); letter-spacing: 1px;">Renderizando projeto...</p>
+                    <div class="progress-bar"><div class="progress-fill"></div></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="modal">
+        <span class="fechar" onclick="document.getElementById('modal').style.display='none'">&times;</span>
+        <img id="imgFinal" src="">
+        <div class="modal-actions">
+            <button class="btn-solid" onclick="window.open('https://wa.me/55?text=Quero%20fazer%20esse%20projeto%20no%20meu%20carro!')">Solicitar Orçamento</button>
+            <button class="btn-cta" onclick="document.getElementById('modal').style.display='none'">Novo Projeto</button>
+        </div>
+    </div>
+
+    <script>
+        let tipoMod = 'Substituir as duas rodas por este novo modelo de roda';
+        let acessorioFile, carroFile;
+
+        function preview(e, zoneId) {
+            const file = e.target.files[0];
+            if(!file) return;
+            if(zoneId === 'arteZone') acessorioFile = file;
+            if(zoneId === 'carroZone') carroFile = file;
+            const url = URL.createObjectURL(file);
+            document.getElementById(zoneId).innerHTML = `<img src="${url}">`;
+        }
+
+        function sel(txt, el) {
+            document.querySelectorAll('.btn-opcao').forEach(b => b.classList.remove('ativo'));
+            el.classList.add('ativo');
+            tipoMod = txt;
+            document.getElementById('localText').value = '';
+        }
+        document.getElementById('localText').addEventListener('input', (e) => {
+            document.querySelectorAll('.btn-opcao').forEach(b => b.classList.remove('ativo'));
+            tipoMod = e.target.value;
+        });
+
+        async function gerarTuning() {
+            if(!acessorioFile || !carroFile) return alert("Envie a imagem do carro e do acessório/roda.");
+            const formData = new FormData();
+            formData.append('foto_carro', carroFile);
+            formData.append('foto_acessorio', acessorioFile);
+            formData.append('tipo_modificacao', tipoMod);
+
+            const btn = document.querySelector('button[onclick="gerarTuning()"]');
+            const loader = document.getElementById('loader');
+            btn.style.display = 'none';
+            loader.style.display = 'block';
+
+            try {
+                // Endpoint direcionado para o FastAPI
+                const resp = await fetch('http://localhost:8000/gerar-tuning', { method: 'POST', body: formData });
+                const dados = await resp.json();
+                if(dados.sucesso) {
+                    document.getElementById('imgFinal').src = `data:image/png;base64,${dados.imagem_final}`;
+                    document.getElementById('modal').style.display = 'flex';
+                } else alert(dados.erro);
+            } catch(e) { alert("Erro ao conectar com o servidor."); }
+            
+            btn.style.display = 'block';
+            loader.style.display = 'none';
+        }
+    </script>
+</body>
+</html>
